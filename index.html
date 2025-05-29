@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>화담숲 도면 핀 뷰어 - 팝업 닫기 버튼 & 사진 확대 모달</title>
+<style>
+  body { font-family: sans-serif; background: #f4f4f4; text-align: center; }
+  .map-container { position: relative; display: inline-block; }
+  .pin {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: red;
+    border-radius: 50%;
+    color: white;
+    text-align: center;
+    line-height: 40px;
+    font-weight: bold;
+    font-size: 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .popup {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #aaa;
+    padding: 8px 8px 12px 8px;
+    z-index: 100;
+    max-width: 400px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.3);
+    border-radius: 6px;
+  }
+  .popup .close-btn {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    font-weight: bold;
+    font-size: 20px;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+  }
+  .popup img {
+    width: 180px;
+    margin: 3px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: transform 0.2s ease;
+  }
+  .popup img:hover {
+    transform: scale(1.05);
+  }
+  /* 전체 화면 모달 스타일 */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1500;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background-color: rgba(0,0,0,0.8);
+    overflow: hidden;
+  }
+  .modal-content {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw; height: 100vh;
+    object-fit: contain;
+    margin: auto;
+    max-width: none;
+    max-height: none;
+    box-shadow: none;
+    cursor: zoom-out;
+    user-select: none;
+  }
+  .modal-close-btn {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    font-size: 36px;
+    color: white;
+    cursor: pointer;
+    z-index: 1600;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+<h2>화담숲 도면 기반 핀 이미지 뷰어</h2>
+<div class="map-container">
+  <img src="layout_sample.jpg" width="1000px" alt="도면" />
+</div>
+<p><a href="editable_index.html" target="_blank">👉 핀 수정하러 가기</a></p>
+
+<!-- 모달 HTML -->
+<div id="imgModal" class="modal" tabindex="0">
+  <span class="modal-close-btn" id="modalCloseBtn">&times;</span>
+  <img class="modal-content" id="modalImage" alt="확대 이미지" />
+</div>
+
+<script>
+  // 모달 열기
+  function openModal(src) {
+    const modal = document.getElementById('imgModal');
+    const modalImg = document.getElementById('modalImage');
+    modal.style.display = "block";
+    modalImg.src = src;
+  }
+
+  // 모달 닫기
+  const modal = document.getElementById('imgModal');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+  modalCloseBtn.onclick = () => {
+    modal.style.display = "none";
+  };
+  modal.onclick = (e) => {
+    if(e.target === modal) { // 모달 바깥 클릭 시 닫기
+      modal.style.display = "none";
+    }
+  };
+
+  // 팝업 닫기 함수
+  function closePopup(popupId) {
+    const popup = document.getElementById(popupId);
+    if(popup) popup.style.display = 'none';
+  }
+
+  async function loadPins() {
+    const pins = [
+      { x: 100, y: 100, label: "적-1" }, { x: 150, y: 100, label: "적-2" },
+      { x: 200, y: 100, label: "적-3" }, { x: 250, y: 100, label: "적-4" },
+      { x: 300, y: 100, label: "적-5" }, { x: 350, y: 100, label: "적-6" },
+      { x: 400, y: 100, label: "적-7" }, { x: 450, y: 100, label: "적-8" },
+      { x: 500, y: 100, label: "적-9" }, { x: 550, y: 100, label: "적-10" },
+      { x: 100, y: 200, label: "적-11" }, { x: 150, y: 200, label: "적-12" },
+      { x: 200, y: 200, label: "적-13" }, { x: 250, y: 200, label: "적-14" },
+      { x: 300, y: 200, label: "적-15" }, { x: 350, y: 200, label: "적-16" },
+      { x: 400, y: 200, label: "적-17" }, { x: 450, y: 200, label: "적-18" },
+      { x: 500, y: 200, label: "적-19" }, { x: 550, y: 200, label: "적-20" },
+      { x: 100, y: 300, label: "적-21" }, { x: 150, y: 300, label: "적-22" },
+      { x: 200, y: 300, label: "적-23" }, { x: 250, y: 300, label: "적-24" },
+      { x: 300, y: 300, label: "적-25" }, { x: 350, y: 300, label: "적-26" },
+      { x: 400, y: 300, label: "적-27" }, { x: 450, y: 300, label: "적-28" },
+      { x: 500, y: 300, label: "적-29" }, { x: 550, y: 300, label: "적-30" },
+      { x: 100, y: 400, label: "적-31" }, { x: 150, y: 400, label: "적-32" },
+      { x: 200, y: 400, label: "적-33" }, { x: 250, y: 400, label: "적-34" },
+      { x: 300, y: 400, label: "적-35" },
+      { x: 100, y: 500, label: "전-1" }, { x: 150, y: 500, label: "전-2" },
+      { x: 200, y: 500, label: "전-3" }, { x: 250, y: 500, label: "전-4" },
+      { x: 300, y: 500, label: "전-5" }, { x: 350, y: 500, label: "전-6" },
+      { x: 400, y: 500, label: "전-7" }, { x: 450, y: 500, label: "전-8" },
+      { x: 500, y: 500, label: "전-9" }, { x: 550, y: 500, label: "전-10" },
+      { x: 100, y: 600, label: "전-11" }, { x: 150, y: 600, label: "전-12" },
+      { x: 200, y: 600, label: "전-13" }, { x: 250, y: 600, label: "전-14" },
+      { x: 300, y: 600, label: "전-15" }, { x: 350, y: 600, label: "전-16" },
+      { x: 400, y: 600, label: "전-17" }
+    ];
+
+    const container = document.querySelector('.map-container');
+    pins.forEach((p, i) => {
+      // 핀 생성
+      const pin = document.createElement('div');
+      pin.className = 'pin';
+      pin.style.top = p.y + 'px';
+      pin.style.left = p.x + 'px';
+      pin.textContent = p.label;
+      pin.onclick = () => togglePopup('popup' + i);
+      container.appendChild(pin);
+
+      // 팝업 생성
+      const popup = document.createElement('div');
+      popup.className = 'popup';
+      popup.id = 'popup' + i;
+      popup.style.top = (p.y + 40) + 'px';
+      popup.style.left = p.x + 'px';
+
+      // 닫기 버튼 생성
+      const closeBtn = document.createElement('span');
+      closeBtn.className = 'close-btn';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        closePopup(popup.id);
+      };
+      popup.appendChild(closeBtn);
+
+      // 이미지 2장 추가
+      for (let j = 1; j <= 2; j++) {
+        const img = document.createElement('img');
+        img.src = `images/${p.label}_${j}.jpg`;
+        img.onclick = (e) => {
+          e.stopPropagation();
+          openModal(img.src);
+        };
+        popup.appendChild(img);
+      }
+
+      // 라벨 텍스트
+      const labelText = document.createElement('div');
+      labelText.textContent = `${p.label} 구역`;
+      labelText.style.marginTop = '8px';
+      popup.appendChild(labelText);
+
+      container.appendChild(popup);
+    });
+  }
+
+  // 팝업 토글 함수
+  function togglePopup(id) {
+    document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+  }
+
+  // 팝업 닫기 함수
+  function closePopup(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  }
+
+  // 팝업 외 영역 클릭 시 팝업 닫기
+  document.addEventListener('click', e => {
+    if (!e.target.classList.contains('pin')) {
+      document.querySelectorAll('.popup').forEach(p => p.style.display = 'none');
+    }
+  });
+
+  window.onload = loadPins;
+</script>
+</body>
+</html>
