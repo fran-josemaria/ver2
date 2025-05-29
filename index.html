@@ -2,20 +2,21 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>화담숲 도면 핀 뷰어 - 다수 핀 포함</title>
+  <title>화담숲 도면 핀 뷰어 - 핀 크기 및 글자 크기 조절</title>
   <style>
     body { font-family: sans-serif; background: #f4f4f4; text-align: center; }
     .map-container { position: relative; display: inline-block; }
     .pin {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 15px;
+      height: 15px;
       background: red;
       border-radius: 50%;
       color: white;
       text-align: center;
-      line-height: 30px;
+      line-height: 15px;
       font-weight: bold;
+      font-size: 7px;  /* 글자 크기 조절 */
       cursor: pointer;
       user-select: none;
     }
@@ -33,8 +34,8 @@
   <script>
     async function loadPins() {
       const pins = [
-        { x: 335, y: 441, label: "적-1" }, { x: 437, y: 399, label: "적-2" },
-        { x: 462, y: 372, label: "적-3" }, { x: 250, y: 100, label: "적-4" },
+        { x: 337, y: 447, label: "적-1" }, { x: 150, y: 100, label: "적-2" },
+        { x: 200, y: 100, label: "적-3" }, { x: 250, y: 100, label: "적-4" },
         { x: 300, y: 100, label: "적-5" }, { x: 350, y: 100, label: "적-6" },
         { x: 400, y: 100, label: "적-7" }, { x: 450, y: 100, label: "적-8" },
         { x: 500, y: 100, label: "적-9" }, { x: 550, y: 100, label: "적-10" },
@@ -52,7 +53,7 @@
         { x: 200, y: 400, label: "적-33" }, { x: 250, y: 400, label: "적-34" },
         { x: 300, y: 400, label: "적-35" },
 
-        { x: 100, y: 500, label: "전-1" }, { x: 150, y: 500, label: "전-2" },
+        { x: 100, y: 500, label: "전-1" }, { x: 519, y: 366, label: "전-2" },
         { x: 200, y: 500, label: "전-3" }, { x: 250, y: 500, label: "전-4" },
         { x: 300, y: 500, label: "전-5" }, { x: 350, y: 500, label: "전-6" },
         { x: 400, y: 500, label: "전-7" }, { x: 450, y: 500, label: "전-8" },
