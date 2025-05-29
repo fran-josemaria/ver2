@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>도면 핀 편집기 - 클릭으로 핀 추가 + JS 객체 리터럴 출력</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f0f0f0; }
+    .map-container { position: relative; display: inline-block; border: 1px solid #ccc; }
+    .pin {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      background-color: red;
+      border-radius: 50%;
+      text-align: center;
+      color: white;
+      font-weight: bold;
+      line-height: 28px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .popup {
+      position: absolute;
+      background: white;
+      border: 1px solid #aaa;
+      padding: 8px;
+      z-index: 100;
+      display: none;
+      max-width: 320px;
+    }
+    .popup img {
+      width: 80px;
+      margin: 3px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-top: 20px;
+      font-family: monospace;
+      resize: none;
+    }
+    .controls {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🛠 도면 핀 편집기 - 클릭으로 핀 추가 + JS 객체 리터럴 출력</h2>
+
+  <div class="controls">
+    그룹 선택:
+    <select id="group">
+      <option value="전">전정</option>
+      <option value="적">적심</option>
+    </select>
+    <button onclick="clearPins()">모든 핀 제거</button>
+    <button onclick="downloadPins()">JSON 저장</button>
+    <input type="file" accept=".json" onchange="uploadPins(event)" />
+  </div>
+
+  <div class="map-container" id="map">
+    <img src="layout_sample.jpg" alt="도면" width="1000" id="mapImage" />
+  </div>
+
+  <textarea id="pinJsonOutput" readonly placeholder="여기에 JS 객체 리터럴 형식으로 핀 데이터가 출력됩니다. 뷰어에 붙여넣기 편합니다."></textarea>
+
+<script>
+  let pins = [];
+  let counters = { 전: 1, 적: 1 };
+  const map = document.getElementById('map');
+  const mapImage = document.getElementById('mapImage');
+  let currentPopup = null;
+
+  mapImage.addEventListener('click', (e) => {
+    const rect = e.target.getBoundingClientRect();
+    const x = Math.round(e.clientX - rect.left);
+    const y = Math.round(e.clientY - rect.top);
+    const group = document.getElementById('group').value;
+    addPin(group, x, y);
+  });
+
+  function addPin(group, x, y) {
+    const label = `${group}-${counters[group]++}`;
+    pins.push({ x, y, label });
+    renderPins();
+  }
+
+  function clearPins() {
+    pins = [];
+    counters = { 전: 1, 적: 1 };
+    renderPins();
+  }
+
+  function renderPins() {
+    document.querySelectorAll('.pin').forEach(p => p.remove());
+    document.querySelectorAll('.popup').forEach(p => p.remove());
+    currentPopup = null;
+
+    pins.forEach((pin, i) => {
+      const pinDiv = document.createElement('div');
+      pinDiv.className = 'pin';
+      pinDiv.style.top = pin.y + 'px';
+      pinDiv.style.left = pin.x + 'px';
+      pinDiv.textContent = pin.label;
+      pinDiv.title = pin.label;
+
+      const popupDiv = document.createElement('div');
+      popupDiv.className = 'popup';
+      popupDiv.id = 'popup' + i;
+      popupDiv.style.top = (pin.y + 30) + 'px';
+      popupDiv.style.left = pin.x + 'px';
+
+      for (let j = 1; j <= 2; j++) {
+        const img = document.createElement('img');
+        img.src = `images/${pin.label}_${j}.jpg`;
+        popupDiv.appendChild(img);
+      }
+      popupDiv.innerHTML += `<br><b>${pin.label} 구역</b><br>좌표: (${pin.x}, ${pin.y})`;
+
+      pinDiv.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (currentPopup && currentPopup !== popupDiv) {
+          currentPopup.style.display = 'none';
+        }
+        if (popupDiv.style.display === 'block') {
+          popupDiv.style.display = 'none';
+          currentPopup = null;
+        } else {
+          popupDiv.style.display = 'block';
+          currentPopup = popupDiv;
+        }
+      });
+
+      map.appendChild(pinDiv);
+      map.appendChild(popupDiv);
+    });
+
+    updateJsonOutput();
+  }
+
+  function updateJsonOutput() {
+    // JS 객체 리터럴 스타일로 변환해서 출력
+    let str = pins.map(pin => {
+      return `{ x: ${pin.x}, y: ${pin.y}, label: "${pin.label}" }`;
+    }).join(',\n');
+    str = '[\n' + str + '\n]';
+    document.getElementById('pinJsonOutput').value = str;
+  }
+
+  function downloadPins() {
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pins, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute('href', dataStr);
+    a.setAttribute('download', 'pins.json');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function uploadPins(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      pins = JSON.parse(e.target.result);
+      counters = { 전: 1, 적: 1 };
+      pins.forEach(pin => {
+        const group = pin.label.split('-')[0];
+        const num = parseInt(pin.label.split('-')[1]);
+        if (num >= counters[group]) counters[group] = num + 1;
+      });
+      renderPins();
+    };
+    reader.readAsText(file);
+  }
+
+  document.addEventListener('click', () => {
+    if (currentPopup) {
+      currentPopup.style.display = 'none';
+      currentPopup = null;
+    }
+  });
+</script>
+</body>
+</html>
